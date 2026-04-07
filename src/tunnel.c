@@ -42,6 +42,30 @@ int encode_packet(const uint8_t *plaintext, int plain_len, uint8_t *enc_buf, int
 		return enc_len;
 }
 
+// The decoding will be the reverse of encoding, replacing 'cat' with 'dog'.
+int decode_packet(const uint8_t *enc_buf, int enc_len, uint8_t *dec_buf, int dec_buf_size) {
+		int dec_len = 0;
+		for (int i = 0; i < enc_len && dec_len < dec_buf_size; i++) {
+				if (i + 2 < enc_len && enc_buf[i] == 'c' && enc_buf[i + 1] == 'a' && enc_buf[i + 2] == 't') {
+						if (dec_len + 3 > dec_buf_size) break; // Check buffer size
+						dec_buf[dec_len++] = 'd';
+						dec_buf[dec_len++] = 'o';
+						dec_buf[dec_len++] = 'g';
+						i += 2; // Skip 'cat'
+				} else {
+						dec_buf[dec_len++] = enc_buf[i];
+				}
+		}
+		return dec_len;
+}
+
+int print_hex(const uint8_t *data, int len) {
+		for (int i = 0; i < len; i++) {
+				printf("%c", data[i]);
+		}
+		printf("\n");
+}
+
 int udp_open(uint16_t local_port) {
 		int fd = socket(AF_INET, SOCK_DGRAM, 0);
 		if (fd < 0) {
@@ -105,6 +129,8 @@ void tunnel(int tun_fd, int udp_fd, struct sockaddr_in *peer_addr) {
 								break;
 						}
 
+						print_hex(plain_buf, nread); // Print the raw packet data in hex format
+
 						int enc_len = encode_packet(plain_buf, nread, enc_buf, sizeof(enc_buf));
 						if (sendto(udp_fd, enc_buf, enc_len, 0, (struct sockaddr *)peer_addr, sizeof(*peer_addr)) < 0) {
 								perror("sendto peer");
@@ -120,14 +146,21 @@ void tunnel(int tun_fd, int udp_fd, struct sockaddr_in *peer_addr) {
 								break;
 						}
 
-						write(tun_fd, enc_buf, nread); // For simplicity, we are writing the encoded packet directly to tun. In a real implementation, you would decode it first.
+						print_hex(enc_buf, nread); // Print the raw packet data in hex format
+						int dec_len = decode_packet(enc_buf, nread, plain_buf, sizeof(plain_buf));
+
+
+						if(write(tun_fd, enc_buf, nread) < 0) {
+								perror("write tun");
+								break;
+						}
 				}
 		}
 }
 
 
 int main(int argc, char *argv[]) {
-		// Example usage: `sudo ./tun_example <peer_ip> <peer_port> <local_port>`
+		// Example usage: `sudo ./tunnel <peer_ip> <peer_port> <local_port>`
 		int tun_fd = tun_open("tun0");
 		if (tun_fd < 0) {
 				return 1;

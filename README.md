@@ -9,7 +9,53 @@ It works using git tags, so you can check out the different stages of the projec
 > Usage example `git checkout virtual-interface`
 
 - `virtual-interface`: A simple tunnel that forwards TCP traffic from a virtual interface to a physical interface using the `ip` cli + a C program that reads from the virtual interface.
+- `cat-tunnel`: A tunnel that replace "dog" with "cat" in the payload of TCP packets. Really simple, but it shows how to manipulate TCP packets in user space.
 
+
+---
+
+## Notes
+
+### Cat tunnel
+
+The network stack architecture of the cat tunnel is as follows:
+
+![net-stack-cat-tunnel](img/net-stack-cat-tunnel.png)
+
+In this setup, to run the project : 
+1. Compile the cat tunnel program : 
+
+```bash
+make
+```
+
+2. Setup the dev environment : 
+
+```bash
+sudo ./setup-dev-env.sh
+```
+
+This will create two network namespaces `client`, `server` and a veth pair between them. It will also setup the routing rules and iptables rules to allow TCP traffic between the two namespaces on the underlay network.
+
+3. Run the cat tunnel program in both namespaces : 
+
+In one terminal, run the server :
+```bash
+sudo ip netns exec server ./tunnel 192.168.100.1 5000 5000
+sudo ip netns exec server ip addr add 10.0.0.2/24 dev tun0
+sudo ip netns exec server ip link set tun0 up
+sudo ip netns exec server nc -l 12345
+```
+
+In another terminal, run the client :
+```bash
+sudo ip netns exec client ./tunnel 192.168.100.2 5000 5001
+sudo ip netns exec client ip addr add 10.0.0.1/24 dev tun0
+sudo ip netns exec client ip link set tun0 up
+sudo ip netns exec client nc 10.0.0.2 12345
+```
+
+And type in "Hello I love dogs!" in the client terminal, you should see "Hello I love cats!" in the server terminal.
 
 ---
 
