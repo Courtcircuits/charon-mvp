@@ -1,4 +1,17 @@
-# Setup
+# Charon MVP
+
+This is my wall of shame for the Charon tunnel project. It contains snippets of code that I have written to discover and learn about networking, DTNs, VPNs and other related topics. It is not meant to be a comprehensive guide, but rather a collection of notes and experiments that I have done along the way.
+
+It works using git tags, so you can check out the different stages of the project by using `git checkout <tag>`.
+
+## Table of tags
+
+> Usage example `git checkout virtual-interface`
+
+- `virtual-interface`: A simple tunnel that forwards TCP traffic from a virtual interface to a physical interface using the `ip` cli + a C program that reads from the virtual interface.
+
+
+# Targetted DX
 
 1. Launch a TCP server using netcat :
 
