@@ -11,6 +11,8 @@ It works using git tags, so you can check out the different stages of the projec
 - `virtual-interface`: A simple tunnel that forwards TCP traffic from a virtual interface to a physical interface using the `ip` cli + a C program that reads from the virtual interface.
 
 
+---
+
 # Targetted DX
 
 1. Launch a TCP server using netcat :
@@ -35,5 +37,5 @@ nc -l 12345
 4. Send a message from the client to the server using netcat :
 
 ```bash
-echo "Good morning Night City!" | nc localhost 4225
+echo "Good morning Night City!" | nc 10.0.0.2 4225
 ```
