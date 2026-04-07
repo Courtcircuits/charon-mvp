@@ -10,6 +10,13 @@
 #define TUN_DEVICE "/dev/net/tun"
 #define MTU 1380
 
+// IDEA:
+// 1. Run the setup script : `sudo ./setup.sh`
+// 2. Compile this code : `gcc main.c -o tun_example`
+// 3. Run the program : `sudo ./tun_example`
+//
+// SUMMARY:
+// This code creates a TUN interface named "tun0" and waits for packets to arrive. When a packet is read from the TUN interface, it prints the number of bytes read. You can process the packet data in the buffer as needed.
 
 
 int tun_open(const char *ifname) {
@@ -59,7 +66,12 @@ int main() {
 								break;
 						}
 						printf("Read %zd bytes from tun0\n", nread);
+						printf("Packet data (hex): \n");
 						// Process the packet in 'buffer' as needed
+						for (ssize_t i = 0; i < nread; i++) {
+								printf("%c", (unsigned char)buffer[i]);
+						}
+						printf("-------\n");
 				}
 		}
 
