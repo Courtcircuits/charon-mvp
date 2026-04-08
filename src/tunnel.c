@@ -9,6 +9,7 @@
 #include <sys/ioctl.h>
 #include <sys/select.h>
 #include <unistd.h>
+#include "aap2/aap2_client.h"
 
 #define TUN_DEVICE "/dev/net/tun"
 #define MTU 1380

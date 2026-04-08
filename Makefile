@@ -1,7 +1,10 @@
 CC      = gcc
-CFLAGS  = -Wall -Wextra -g -O2
+CFLAGS  = -Wall -Wextra -g -O2 \
+	-Iud3tn/include \
+	-Iud3tn/external/nanopb
 
-SRC = src/tunnel.c
+SRC = src/tunnel.c \
+	ud3tn/components/aap2/aap2_client.c
 BIN = tunnel
 
 all: $(BIN)
