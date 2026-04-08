@@ -13,6 +13,7 @@
 #define TUN_DEVICE "/dev/net/tun"
 #define MTU 1380
 #define BUF_SIZE 2048
+#define TUNNEL_PORT 5555
 
 // IDEA:
 // 1. Run the setup script : `sudo ./setup.sh`
@@ -170,7 +171,7 @@ void tunnel(int tun_fd, int udp_fd, struct sockaddr_in *peer_addr) {
       print_hex(enc_buf, nread); // Print the raw packet data in hex format
       int dec_len = decode_packet(enc_buf, nread, plain_buf, sizeof(plain_buf));
 
-      if (write(tun_fd, enc_buf, nread) < 0) {
+      if (write(tun_fd, plain_buf, nread) < 0) {
         perror("write tun");
         break;
       }
@@ -187,41 +188,25 @@ struct config {
 
 struct config parse_args(int argc, char *argv[]) {
   struct config cfg = {0};
-  if (argc != 4) {
-    fprintf(stderr, "Usage: %s <peer_ip>:<peer_port> <local_ip>:<local_port>\n",
+  if (argc != 3) {
+    fprintf(stderr, "Usage: %s <peer_ip> <local_ip>\n",
             argv[0]);
     exit(1);
   }
   char *peer_arg = argv[1];
   char *local_arg = argv[2];
 
-  char *colon = strchr(peer_arg, ':');
-  if (!colon) {
-    fprintf(stderr,
-            "Invalid peer argument format. Expected <peer_ip>:<peer_port>\n");
-    exit(1);
-  }
-  *colon = '\0';
   cfg.peer_ip = peer_arg;
-  cfg.peer_port = atoi(colon + 1);
+  cfg.peer_port = TUNNEL_PORT; // Default peer port
 
-  colon = strchr(local_arg, ':');
-  if (!colon) {
-    fprintf(
-        stderr,
-        "Invalid local argument format. Expected <local_ip>:<local_port>\n");
-    exit(1);
-  }
-  *colon = '\0';
   cfg.local_ip = local_arg;
-  cfg.local_port = atoi(colon + 1);
+  cfg.local_port = TUNNEL_PORT; // Default local port
 
   return cfg;
 }
 
 int main(int argc, char *argv[]) {
-  // Example usage: `sudo ./tunnel <peer_ip>:<peer_port>
-  // <local_ip>:<local_port>`
+  // Example usage: `sudo ./tunnel <peer_ip> <local_ip>`
   struct config cfg = parse_args(argc, argv);
   int tun_fd = tun_open("tun0");
   if (tun_fd < 0) {

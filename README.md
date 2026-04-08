@@ -41,18 +41,14 @@ This will create two network namespaces `client`, `server` and a veth pair betwe
 
 In one terminal, run the server :
 ```bash
-sudo ip netns exec server ./tunnel 192.168.100.1 5000 5000
-sudo ip netns exec server ip addr add 10.0.0.2/24 dev tun0
-sudo ip netns exec server ip link set tun0 up
-sudo ip netns exec server nc -l 12345
+sudo ip netns exec server ./tunnel 192.168.100.1 10.0.0.2
+sudo ip netns exec server nc -l 4000
 ```
 
 In another terminal, run the client :
 ```bash
-sudo ip netns exec client ./tunnel 192.168.100.2 5000 5001
-sudo ip netns exec client ip addr add 10.0.0.1/24 dev tun0
-sudo ip netns exec client ip link set tun0 up
-sudo ip netns exec client nc 10.0.0.2 12345
+sudo ip netns exec client ./tunnel 192.168.100.2 10.0.0.1
+sudo ip netns exec client nc 10.0.0.2 4000
 ```
 
 And type in "Hello I love dogs!" in the client terminal, you should see "Hello I love cats!" in the server terminal.
