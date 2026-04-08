@@ -59,7 +59,7 @@ int decode_packet(const uint8_t *enc_buf, int enc_len, uint8_t *dec_buf, int dec
 		return dec_len;
 }
 
-int print_hex(const uint8_t *data, int len) {
+void print_hex(const uint8_t *data, int len) {
 		for (int i = 0; i < len; i++) {
 				printf("%c", data[i]);
 		}
@@ -159,18 +159,53 @@ void tunnel(int tun_fd, int udp_fd, struct sockaddr_in *peer_addr) {
 }
 
 
+struct config {
+		char *peer_ip;
+		int peer_port;
+		int local_port;
+		char *local_ip;
+};
+
+struct config parse_args(int argc, char *argv[]) {
+		struct config cfg = {0};
+		if (argc != 4) {
+				fprintf(stderr, "Usage: %s <peer_ip>:<peer_port> <local_ip>:<local_port>\n", argv[0]);
+				exit(1);
+		}
+		char *peer_arg = argv[1];
+		char *local_arg = argv[2];
+
+		char *colon = strchr(peer_arg, ':');
+		if (!colon) {
+				fprintf(stderr, "Invalid peer argument format. Expected <peer_ip>:<peer_port>\n");
+				exit(1);
+		}
+		*colon = '\0';
+		cfg.peer_ip = peer_arg;
+		cfg.peer_port = atoi(colon + 1);
+
+		colon = strchr(local_arg, ':');
+		if (!colon) {
+				fprintf(stderr, "Invalid local argument format. Expected <local_ip>:<local_port>\n");
+				exit(1);
+		}
+		*colon = '\0';
+		cfg.local_ip = local_arg;
+		cfg.local_port = atoi(colon + 1);
+
+		return cfg;
+}
+
+
 int main(int argc, char *argv[]) {
-		// Example usage: `sudo ./tunnel <peer_ip> <peer_port> <local_port>`
+		// Example usage: `sudo ./tunnel <peer_ip>:<peer_port> <local_ip>:<local_port>`
+		struct config cfg = parse_args(argc, argv);
 		int tun_fd = tun_open("tun0");
 		if (tun_fd < 0) {
 				return 1;
 		}
 
-		char* peer_ip = argv[1];
-		int peer_port = atoi(argv[2]);
-		int local_port = atoi(argv[3]);
-
-		int udp_fd = udp_open(local_port);
+		int udp_fd = udp_open(cfg.local_port);
 		if (udp_fd < 0) {
 				close(tun_fd);
 				return 1;
@@ -180,9 +215,9 @@ int main(int argc, char *argv[]) {
 
 		struct sockaddr_in peer = {
 				.sin_family = AF_INET,
-				.sin_port = htons(peer_port)
+				.sin_port = htons(cfg.peer_port)
 		};
-		inet_pton(AF_INET, peer_ip, &peer.sin_addr);
+		inet_pton(AF_INET, cfg.peer_ip, &peer.sin_addr);
 
 		// ip addr add 10.0.0.1/24 dev tun0
 		// ip link set tun0 mtu 1380 up
