@@ -1,3 +1,4 @@
+#include "aap2-client.h"
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <linux/if_tun.h>
@@ -9,7 +10,7 @@
 #include <sys/ioctl.h>
 #include <sys/select.h>
 #include <unistd.h>
-#include "aap2/aap2_client.h"
+#include "proto/aap2.pb-c.h"
 
 #define TUN_DEVICE "/dev/net/tun"
 #define MTU 1380
@@ -190,8 +191,7 @@ struct config {
 struct config parse_args(int argc, char *argv[]) {
   struct config cfg = {0};
   if (argc != 3) {
-    fprintf(stderr, "Usage: %s <peer_ip> <local_ip>\n",
-            argv[0]);
+    fprintf(stderr, "Usage: %s <peer_ip> <local_ip>\n", argv[0]);
     exit(1);
   }
   char *peer_arg = argv[1];
@@ -208,26 +208,57 @@ struct config parse_args(int argc, char *argv[]) {
 
 int main(int argc, char *argv[]) {
   // Example usage: `sudo ./tunnel <peer_ip> <local_ip>`
-  struct config cfg = parse_args(argc, argv);
-  int tun_fd = tun_open("tun0");
-  if (tun_fd < 0) {
+  // struct config cfg = parse_args(argc, argv);
+  // int tun_fd = tun_open("tun0");
+  // if (tun_fd < 0) {
+  //   return 1;
+  // }
+  // setup_ip_conf("tun0", cfg.local_ip);
+  //
+  // int udp_fd = udp_open(cfg.local_port);
+  // if (udp_fd < 0) {
+  //   close(tun_fd);
+  //   return 1;
+  // }
+  //
+  // printf("TUN interface 'tun0' created. Waiting for packets...\n");
+  //
+  // struct sockaddr_in peer = {.sin_family = AF_INET,
+  //                            .sin_port = htons(cfg.peer_port)};
+  // inet_pton(AF_INET, cfg.peer_ip, &peer.sin_addr);
+  //
+  // // ip addr add 10.0.0.1/24 dev tun0
+  // // ip link set tun0 mtu 1380 up
+  // tunnel(tun_fd, udp_fd, &peer);
+  const char* secret = "my_extremely_secret_secret_omg_i_love_this_secretly_secret_secret";
+  struct aap2_client* client = connect_aap2("./ud3tn.aap2.socket");
+  if (!client) {
+    fprintf(stderr, "Failed to connect to AAP2\n");
     return 1;
   }
-  setup_ip_conf("tun0", cfg.local_ip);
+  printf("Connected to AAP2 with node ID: %s\n", client->node_id);
 
-  int udp_fd = udp_open(cfg.local_port);
-  if (udp_fd < 0) {
-    close(tun_fd);
+  // Build endpoint_id by appending agent name to the node_id from Welcome
+  // e.g. "dtn://peer-a.dtn/" + "charon" -> "dtn://peer-a.dtn/charon"
+  const char *agent = "charon";
+  size_t eid_len = strlen(client->node_id) + strlen(agent) + 1;
+  char *endpoint_id = malloc(eid_len);
+  snprintf(endpoint_id, eid_len, "%s%s", client->node_id, agent);
+
+  if (configure_aap2(client, 1, AAP2__AUTH_TYPE__AUTH_TYPE_DEFAULT, secret, endpoint_id) < 0) {
+    fprintf(stderr, "Failed to configure AAP2 connection\n");
+    free(endpoint_id);
+    close_aap2(client);
     return 1;
   }
+  free(endpoint_id);
 
-  printf("TUN interface 'tun0' created. Waiting for packets...\n");
+  const uint8_t payload[] = "Hello, AAP2!";
+  send_aap2(client, "dtn://peer-b.dtn/charon", payload, sizeof(payload)-1);
 
-  struct sockaddr_in peer = {.sin_family = AF_INET,
-                             .sin_port = htons(cfg.peer_port)};
-  inet_pton(AF_INET, cfg.peer_ip, &peer.sin_addr);
+  listen_aap2(client);
 
-  // ip addr add 10.0.0.1/24 dev tun0
-  // ip link set tun0 mtu 1380 up
-  tunnel(tun_fd, udp_fd, &peer);
+  close_aap2(client);
+
+  return 0;
 }

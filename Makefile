@@ -1,11 +1,14 @@
 CC      = gcc
 CFLAGS  = -Wall -Wextra -g -O2 \
-	-Iud3tn/include \
-	-Iud3tn/external/nanopb
+	-Isrc \
+	-lprotobuf-c
 
-SRC = src/tunnel.c \
-	ud3tn/components/aap2/aap2_client.c
+SRC = src/*.c \
+	  src/proto/*.c
+	
 BIN = tunnel
+
+.PHONY: all clean dev clean-dev proto
 
 all: $(BIN)
 
@@ -25,3 +28,6 @@ dev: all
 clean-dev:
 	ip netns del client 2>/dev/null || true
 	ip netns del server 2>/dev/null || true
+
+proto:
+	protoc proto/aap2.proto --c_out=./src
