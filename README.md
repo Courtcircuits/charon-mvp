@@ -58,19 +58,25 @@ And type in "Hello I love dogs!" in the client terminal, you should see "Hello I
 
 ### Delay tolerant tunnel
 
-1. Setup ud3tn node :
+1. Setup ud3tn node A :
 
 ```bash
-AAP2_SECRET="my_extremely_secret_secret_omg_i_love_this_secretly_secret_secret" ./ud3tn/result/bin/ud3tn \
-  -b 7 \
-  -c "sqlite:file::memory:?cache=shared;tcpclv3:*,4556;smtcp:*,4222,false;mtcp:*,4224" \
-  -e dtn://peer-a.dtn/ \
-  -l 86400 \
-  -L 2 \
-  -m 0 \
-  -s $PWD/ud3tn.socket \
-  -S $PWD/ud3tn.aap2.socket \
-  -x "AAP2_SECRET"
+sudo ip netns exec client ./peer-a.sh
+```
+
+2. Setup ud3tn node B in another terminal :
+
+```bash
+sudo ip netns exec server ./peer-b.sh
+```
+
+3. Create the contact : 
+
+```bash
+sudo ip netns exec client ./ud3tn/.venv/bin/aap2-config --socket ./ud3tn-peera.aap2.socket --schedule 1 3600000 100000 dtn://peer-a.dtn/ mtcp:192.168.100.1:4224 --secret "my_extremely_secret_secret_omg_i_love_this_secretly_secret_secret" 
+
+
+sudo ip netns exec client ./ud3tn/.venv/bin/aap2-config --socket ./ud3tn-peerb.aap2.socket --schedule 1 3600000 100000 dtn://peer-b.dtn/ mtcp:192.168.100.2:4224 --secret "my_extremely_secret_secret_omg_i_love_this_secretly_secret_secret" 
 ```
 
 ---

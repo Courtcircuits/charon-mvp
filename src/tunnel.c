@@ -231,7 +231,7 @@ int main(int argc, char *argv[]) {
   // // ip link set tun0 mtu 1380 up
   // tunnel(tun_fd, udp_fd, &peer);
   const char* secret = "my_extremely_secret_secret_omg_i_love_this_secretly_secret_secret";
-  struct aap2_client* client = connect_aap2("./ud3tn.aap2.socket");
+  struct aap2_client* client = connect_aap2("./ud3tn-peera.aap2.socket");
   if (!client) {
     fprintf(stderr, "Failed to connect to AAP2\n");
     return 1;
@@ -254,7 +254,7 @@ int main(int argc, char *argv[]) {
   free(endpoint_id);
 
   const uint8_t payload[] = "Hello, AAP2!";
-  send_aap2(client, "dtn://peer-b.dtn/charon", payload, sizeof(payload)-1);
+  send_aap2(client, "dtn://peer-b.dtn/", payload, sizeof(payload)-1);
 
   listen_aap2(client);
 
